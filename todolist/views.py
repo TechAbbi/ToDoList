@@ -14,43 +14,32 @@ def Intro(request):
 
 def index(request):
     todo_items = TaskToComplete.objects.all()
-    return render(request, "todolist/index.html", {"todo_items": todo_items})
+    form = TaskToCompleteForm()
+    return render(request, "todolist/index.html", {"todo_items": todo_items, "form": form})
 
 
 def add(request):
     form = TaskToCompleteForm(request.POST or None)
     if form.is_valid():
-        form.save()
-        return redirect("todolist:index")
-    else:
-        form = TaskToCompleteForm()
-    return render(request, "todolist/add.html", {"form": form})
+        new_todo = TaskToComplete(task=request.POST['task'])
+        new_todo.save()
+    return redirect("todolist:index")
 
 
-def details(request, item_id):
-    item = TaskToComplete.objects.get(pk=item_id)
-    return render(request, "todolist/details.html", {"item": item})
+def completed_item(request, todo_id):
+    todo = TaskToComplete.objects.get(pk=todo_id)
+    todo.completed = True
+    todo.save()
+    return redirect("todolist:index")
 
 
-def update(request, item_id):
-    item = TaskToComplete.objects.get(pk=item_id)
-    form = TaskToCompleteForm(request.POST or None, instance=item)
-    if form.is_valid():
-        form.save()
-        return redirect("todolist:index")
-    return render(request, "todolist/add.html", {"form": form, "item": item})
+def deleted_completed(request):
+    completed_todo = TaskToComplete.objects.filter(completed__exact=True)
+    completed_todo.delete()
+    return redirect("todolist:index")
 
-
-def delete(request, item_id):
-    item = TaskToComplete.objects.get(pk=item_id)
-    if request.method == "POST":
-        item.delete()
-        return redirect("todolist:index")
-    return render(request, "todolist/delete.html", {"item": item})
 
 def delete_all(request):
     tasks = TaskToComplete.objects.all()
-    if request.method == "POST":
-        tasks.delete()
-        return redirect("todolist:index")
-    return render(request, "todolist/delete_all.html", {"tasks": tasks})
+    tasks.delete()
+    return redirect("todolist:index")
